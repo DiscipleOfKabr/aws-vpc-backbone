@@ -12,3 +12,14 @@ variable "env_name" {
   description = "User input dev or prod"
 
 }
+
+variable "public_subnet_cidr"{
+    type        = string 
+    description = "The CIDR block for the public subnet"
+
+}
+
+variable "private_subnet_cidr"{
+    type        = string
+    description = "The CIDR block for the private subnet."
+}
