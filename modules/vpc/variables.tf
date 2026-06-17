@@ -7,19 +7,21 @@ variable "vpc_cidr" {
 }
 
 variable "env_name" {
-
   type        = string
-  description = "User input dev or prod"
+  description = "The name of the environment passed down from the root context"
+}
+
+variable "public_subnet_cidr" {
+  type        = string
+  description = "The CIDR block for the public subnet"
 
 }
 
-variable "public_subnet_cidr"{
-    type        = string 
-    description = "The CIDR block for the public subnet"
-
+variable "private_subnet_cidr" {
+  type        = string
+  description = "The CIDR block for the private subnet."
 }
 
-variable "private_subnet_cidr"{
-    type        = string
-    description = "The CIDR block for the private subnet."
-}
+
+
+
