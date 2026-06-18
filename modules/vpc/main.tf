@@ -72,6 +72,8 @@ resource "aws_route_table" "public" {
 
 
 resource "aws_route_table_association" "public" {
+
+  for_each  = aws_subnet.public
   subnet_id      = aws_subnet.public.id
   route_table_id = aws_route_table.public.id
 }
@@ -219,5 +221,36 @@ resource "aws_instance" "web_server" {
     Name        = "${var.env_name}-web-server"
     Environment = var.env_name
   }
+}
+
+data "aws_availability_zones" "available" {
+    state = "available"
+}
+
+locals {
+  az_list = slice(data.aws_availability_zones.available.names, 0, 2)
+}
+
+resource "aws_subnet" "public" {
+  for_each          = toset(local.az_list)
+  vpc_id            = aws_vpc.backbone.id
+  availability_zone = each.value
+  cidr_block        = cidrsubnet(var.vpc_cidr, 8, index(local.az_list, each.value))
+  map_public_ip_on_launch = true
+
+  tags = { Name = "${var.env_name}-public-subnet-${each.value}" }
+
+
+}
+
+
+resource "aws_subnet" "private" {
+  for_each          = toset(local.az_list)
+  vpc_id            = aws_vpc.backbone.id
+  availability_zone = each.value
+  cidr_block        = cidrsubnet(var.vpc_cidr, 8, index(local.az_list, each.value))
+  map_public_ip_on_launch = true
+
+  tags = { Name = "${var.env_name}-private-subnet-${each.value}" }
 }
 

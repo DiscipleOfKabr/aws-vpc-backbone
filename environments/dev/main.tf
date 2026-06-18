@@ -25,7 +25,7 @@ terraform {
 
 provider "aws" {
 
-  region = "eu-west-1"
+  region = var.aws_region
 
 }
 
@@ -43,3 +43,5 @@ output "dev_vpc_id" {
   value       = module.dev_network.vpc_id
   description = "The ID of the deployed dev vpc"
 }
+
+
