@@ -1,4 +1,6 @@
 terraform {
+  required_version = ">= 1.0"
+
   backend "s3" {
     bucket         = "dev-tfstate-storage-9mcd4v-safe" 
     key            = "dev/terraform.tfstate"
@@ -6,21 +8,20 @@ terraform {
     use_lockfile = true
     encrypt        = true
   }
-}
 
-
-
-terraform {
-
-
-  required_version = ">= 1.0"
+  
   required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
   }
+
 }
+
+
+
+
 
 provider "aws" {
 
