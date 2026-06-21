@@ -180,18 +180,19 @@ resource "aws_security_group" "private_sg" {
   }
 }
 
-resource "aws_instance" "backend_server" {
-  ami           = data.aws_ami.amazon_linux_2023.id
-  instance_type = "t2.micro"
-  subnet_id     = aws_subnet.main["public_1a"].id
-
-  vpc_security_group_ids = [aws_security_group.private_sg.id]
-
-  tags = {
-    Name        = "${var.env_name}-backend-server"
-    Environment = var.env_name
-  }
-}
+#old backend server block before asg implementation
+#resource "aws_instance" "backend_server" {
+#  ami           = data.aws_ami.amazon_linux_2023.id
+#  instance_type = "t2.micro"
+#  subnet_id     = aws_subnet.main["public_1a"].id
+#
+#  vpc_security_group_ids = [aws_security_group.private_sg.id]
+#
+#  tags = {
+#    Name        = "${var.env_name}-backend-server"
+#    Environment = var.env_name
+#  }
+#}
 
 data "aws_ami" "amazon_linux_2023" {
   most_recent = true
@@ -211,7 +212,7 @@ data "aws_ami" "amazon_linux_2023" {
 resource "aws_instance" "web_server" {
   ami           = data.aws_ami.amazon_linux_2023.id
   instance_type = "t2.micro"
-  subnet_id     = aws_subnet.main["private_1a"].id
+  subnet_id     = aws_subnet.main["public_1a"].id
 
   # Attach our public web firewall
   vpc_security_group_ids = [aws_security_group.public_sg.id]
@@ -282,3 +283,72 @@ resource "aws_nat_gateway" "main" {
   subnet_id     = aws_subnet.main[each.key].id
   depends_on    = [aws_internet_gateway.gw]
 }
+
+#Implementation of Auto Scaling group to decrease throttling in case of use-demand surge
+resource "aws_launch_template" "backend" {
+  name_prefix   = "${var.env_name}-backend-template-"
+  image_id      = data.aws_ami.amazon_linux_2023.id
+  instance_type = "t2.micro"
+
+
+  vpc_security_group_ids = [aws_security_group.private_sg.id]
+
+  tag_specifications {
+
+    resource_type = "instance"
+    tags = {
+      Name = "${var.env_name}-backend-asg"
+    }
+  }
+}
+
+#old asg implementation
+
+#resource "aws_autoscaling_group" "backend_asg" {
+#  vpc_zone_identifier = [for s in aws_subnet.main :s.id if s.tags["Name"] == "${var.env_name}-private_1a" || s.tags["Name"] == "${var.env_name}private_1b"]
+#
+# desire_capacity = 2
+# max_size  =4
+#
+# launch_template {
+#
+#  id    = aws_launch_template.backend.id
+#  version = "$Latest"
+# }
+#
+#}
+
+
+resource "aws_autoscaling_group" "backend_asg" {
+
+  vpc_zone_identifier = [
+    for key, config in var.subnet_configs :
+    aws_subnet.main[key].id if config.type == "private"
+  ]
+
+  desired_capacity = 2
+  max_size         = 4
+  min_size         = 1
+
+  launch_template {
+
+    id      = aws_launch_template.backend.id
+    version = "$Latest"
+  }
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_autoscaling_policy" "backend_cpu_policy" {
+ name   = "${var.env_name}-cpu-scaling"
+ autoscaling_group_name = aws_autoscaling_group.backend_asg.name
+ policy_type      = "TargetTrackingScaling"
+
+ target_tracking_configuration{
+  predefined_metric_specification {
+    predefined_metric_type = "ASGAverageCPUUtilization"
+   }
+  target_value = 61.0 # minimum cpu limit for correct scaling
+  }
+ }
