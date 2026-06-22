@@ -162,10 +162,10 @@ resource "aws_security_group" "private_sg" {
   vpc_id      = aws_vpc.backbone.id
 
   ingress {
-    from_port       = 0
-    to_port         = 0
-    protocol        = "-1"
-    security_groups = [aws_security_group.public_sg.id]
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
   }
 
   egress {
@@ -325,11 +325,12 @@ resource "aws_autoscaling_group" "backend_asg" {
     for key, config in var.subnet_configs :
     aws_subnet.main[key].id if config.type == "private"
   ]
-
+  target_group_arns = [aws_lb_target_group.backend_tg.arn]
   desired_capacity = 2
   max_size         = 4
   min_size         = 1
-
+  health_check_type     = "ELB"
+  health_check_grace_period = 300
   launch_template {
 
     id      = aws_launch_template.backend.id
@@ -337,6 +338,14 @@ resource "aws_autoscaling_group" "backend_asg" {
   }
   lifecycle {
     create_before_destroy = true
+  }
+
+
+  tag {
+
+    key   = "Name"
+    value = "${var.env_name}-backend-instance"
+    propagate_at_launch = true
   }
 }
 
@@ -352,3 +361,77 @@ resource "aws_autoscaling_policy" "backend_cpu_policy" {
   target_value = 61.0 # minimum cpu limit for correct scaling
   }
  }
+
+
+
+
+resource "aws_security_group" "alb_sg" {
+  name      = "${var.env_name}-alb-sg"
+  description = "ALB security group"
+  vpc_id    = aws_vpc.backbone.id
+
+
+
+
+  ingress {
+
+    from_port   = 80
+    to_port     = 80
+    protocol    ="tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+
+  egress {
+    from_port =0
+    to_port = 0
+    protocol ="-1"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+}
+
+resource "aws_lb" "backend_alb" {
+
+    name     = "${var.env_name}-backend-alb"
+    internal      = false
+    load_balancer_type = "application"
+    security_groups  = [aws_security_group.alb_sg.id] 
+
+  subnets = [
+
+    for key, subnet in aws_subnet.main : subnet.id
+    if var.subnet_configs[key].type == "public"
+  ]
+}
+
+
+resource "aws_lb_target_group" "backend_tg" {
+
+ name  = "${var.env_name}-backend-tg"
+ port  = 80
+ protocol = "HTTP"
+ vpc_id  = aws_vpc.backbone.id
+
+ health_check {
+  path = "/"
+
+ }
+
+}
+
+
+# - - - Listener - - - 
+
+resource "aws_lb_listener" "front_end"{
+
+  load_balancer_arn = aws_lb.backend_alb.arn 
+  port    = "80"
+  protocol    = "HTTP"
+
+  default_action {
+
+    type  = "forward"
+    target_group_arn = aws_lb_target_group.backend_tg.arn
+  }
+}
+
