@@ -42,3 +42,7 @@ variable "subnet_configs" {
 }
 
 
+variable "app_port" {
+  type    = number
+  default = 80
+}
