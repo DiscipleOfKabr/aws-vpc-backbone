@@ -14,8 +14,16 @@ resource "aws_security_group" "private_sg" {
     from_port   = var.app_port
     to_port     = var.app_port
     protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
+
   }
+  egress {
+    from_port   = var.app_port2
+    to_port     = var.app_port2
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
 
   tags = {
     Name = "${var.env_name}-private-sg"
@@ -66,12 +74,22 @@ resource "aws_security_group" "alb_sg" {
 
 
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = [var.vpc_cidr]
+    from_port   = var.app_port
+    to_port     = var.app_port
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+
   }
+  egress {
+    from_port   = var.app_port2
+    to_port     = var.app_port2
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = { Name = "${var.env_name}-private-sg" }
+
 }
+
 
 # iam infrastructure set-up
 

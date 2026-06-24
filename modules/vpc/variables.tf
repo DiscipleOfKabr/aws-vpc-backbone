@@ -11,17 +11,6 @@ variable "env_name" {
   description = "The name of the environment passed down from the root context"
 }
 
-variable "public_subnet_cidr" {
-  type        = string
-  description = "The CIDR block for the public subnet"
-
-}
-
-variable "private_subnet_cidr" {
-  type        = string
-  description = "The CIDR block for the private subnet."
-}
-
 
 
 
@@ -45,4 +34,11 @@ variable "subnet_configs" {
 variable "app_port" {
   type    = number
   default = 80
+}
+
+variable "app_port2" {
+
+  type    = number
+  default = 80
+
 }

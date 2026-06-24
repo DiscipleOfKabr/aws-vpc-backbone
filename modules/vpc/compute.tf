@@ -17,10 +17,6 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
-locals {
-  az_list = slice(data.aws_availability_zones.available.names, 0, 2)
-}
-
 
 
 #Implementation of Auto Scaling group to decrease throttling in case of use-demand surge
@@ -29,14 +25,16 @@ resource "aws_launch_template" "backend" {
   name_prefix   = "${var.env_name}-backend-template-"
   image_id      = data.aws_ami.amazon_linux_2023.id
   instance_type = "t3.micro"
+
+
   iam_instance_profile {
     name = aws_iam_instance_profile.backend_profile.name
   }
-
-  vpc_security_group_ids = [aws_security_group.private_sg.id]
-
+  network_interfaces {
+    security_groups = [aws_security_group.private_sg.id]
+    associate_public_ip_address = false
+  }
   tag_specifications {
-
     resource_type = "instance"
     tags = {
       Name = "${var.env_name}-backend-asg"
