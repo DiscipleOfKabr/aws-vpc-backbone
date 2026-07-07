@@ -1,7 +1,7 @@
 resource "aws_security_group" "private_sg" {
   name        = "${var.env_name}-private-sg"
   description = "Allow inbound traffic only from public sec. group"
-  vpc_id      = aws_vpc.backbone.id
+  vpc_id      = var.vpc_id
 
   ingress {
     from_port       = var.app_port
@@ -11,46 +11,14 @@ resource "aws_security_group" "private_sg" {
   }
 
   egress {
-    from_port   = var.app_port
-    to_port     = var.app_port
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-
-  }
-  egress {
-    from_port   = var.app_port2
-    to_port     = var.app_port2
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-
-  tags = {
-    Name = "${var.env_name}-private-sg"
-  }
-}
-
-resource "aws_security_group" "public_sg" {
-  name        = "${var.env_name}-public-sg"
-  description = "Allow inbound web traffic"
-  vpc_id      = aws_vpc.backbone.id
-
-  ingress {
-    from_port   = var.app_port
-    to_port     = var.app_port
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-  }
 
+  }
   tags = {
-    Name = "${var.env_name}-public-sg"
+    Name = "${var.env_name}-private-sg"
   }
 }
 
@@ -59,7 +27,7 @@ resource "aws_security_group" "public_sg" {
 resource "aws_security_group" "alb_sg" {
   name        = "${var.env_name}-alb-sg"
   description = "ALB security group"
-  vpc_id      = aws_vpc.backbone.id
+  vpc_id      = var.vpc_id
 
 
 
@@ -73,20 +41,20 @@ resource "aws_security_group" "alb_sg" {
   }
 
 
-  egress {
-    from_port   = var.app_port
-    to_port     = var.app_port
+  ingress {
+    from_port   = var.https_port
+    to_port     = var.https_port
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
 
   }
   egress {
-    from_port   = var.app_port2
-    to_port     = var.app_port2
-    protocol    = "tcp"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  tags = { Name = "${var.env_name}-private-sg" }
+  tags = { Name = "${var.env_name}-alb-sg" }
 
 }
 
@@ -123,3 +91,4 @@ resource "aws_iam_instance_profile" "backend_profile" {
   name = "${var.env_name}-backend-profile"
   role = aws_iam_role.backend_role.name
 }
+

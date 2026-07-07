@@ -44,3 +44,22 @@ output "dev_vpc_id" {
 }
 
 
+module "security" {
+  source     = "../../modules/security"
+  vpc_id     = module.dev_network.vpc_id
+  env_name   = var.env_name
+  app_port   = var.app_port
+  https_port = var.https_port
+}
+
+module "compute" {
+  source                    = "../../modules/compute"
+  subnet_ids        = module.dev_network.public_subnet_ids
+  alb_sg_id= module.security.alb_sg_id
+  vpc_id = module.dev_network.vpc_id
+  private_subnet_ids = module.dev_network.private_subnet_ids
+  private_security_group_id = module.security.private_security_group_id
+  backend_profile_name = module.security.backend_profile_name
+  env_name = var.env_name
+  app_port = var.app_port
+}

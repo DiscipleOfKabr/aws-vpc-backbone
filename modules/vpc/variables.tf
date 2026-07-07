@@ -36,9 +36,10 @@ variable "app_port" {
   default = 80
 }
 
-variable "app_port2" {
-
+variable "https_port" {
   type    = number
-  default = 80
-
+  default = 443
 }
+
+
+

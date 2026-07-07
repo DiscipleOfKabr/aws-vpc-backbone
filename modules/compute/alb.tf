@@ -3,13 +3,9 @@ resource "aws_lb" "backend_alb" {
   name               = "${var.env_name}-backend-alb"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb_sg.id]
+  security_groups    = [var.alb_sg_id]
 
-  subnets = [
-
-    for key, subnet in aws_subnet.main : subnet.id
-    if var.subnet_configs[key].type == "public"
-  ]
+  subnets = var.subnet_ids
 }
 
 resource "aws_lb_target_group" "backend_tg" {
@@ -17,7 +13,7 @@ resource "aws_lb_target_group" "backend_tg" {
   name     = "${var.env_name}-backend-tg"
   port     = var.app_port
   protocol = "HTTP"
-  vpc_id   = aws_vpc.backbone.id
+  vpc_id   = var.vpc_id
 
   health_check {
     path = "/"

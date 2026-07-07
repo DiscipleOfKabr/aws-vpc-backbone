@@ -28,10 +28,10 @@ resource "aws_launch_template" "backend" {
 
 
   iam_instance_profile {
-    name = aws_iam_instance_profile.backend_profile.name
+    name = var.backend_profile_name
   }
   network_interfaces {
-    security_groups = [aws_security_group.private_sg.id]
+    security_groups             = [var.private_security_group_id]
     associate_public_ip_address = false
   }
   tag_specifications {
@@ -40,20 +40,27 @@ resource "aws_launch_template" "backend" {
       Name = "${var.env_name}-backend-asg"
     }
   }
+  user_data = base64encode(<<-EOF
+    #!/bin/bash
+    dnf install -y httpd
+    systemctl start httpd
+    systemctl enable httpd
+    echo "Hello from the backend" > /var/www/html/index.html
+  EOF
+  )
 
 }
 resource "aws_autoscaling_group" "backend_asg" {
 
-  vpc_zone_identifier = [
-    for key, config in var.subnet_configs :
-    aws_subnet.main[key].id if config.type == "private"
-  ]
+  vpc_zone_identifier = var.private_subnet_ids
+
   target_group_arns         = [aws_lb_target_group.backend_tg.arn]
   desired_capacity          = 2
   max_size                  = 4
   min_size                  = 1
   health_check_type         = "ELB"
   health_check_grace_period = 300
+
   launch_template {
 
     id      = aws_launch_template.backend.id
@@ -81,6 +88,6 @@ resource "aws_autoscaling_policy" "backend_cpu_policy" {
     predefined_metric_specification {
       predefined_metric_type = "ASGAverageCPUUtilization"
     }
-    target_value = 61.0 # minimum cpu limit for correct scaling
+    target_value = 60.0 # minimum cpu limit for correct scaling
   }
 }

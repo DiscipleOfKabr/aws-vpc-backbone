@@ -1,11 +1,22 @@
-# Networking
-output "vpc_id" { value = aws_vpc.backbone.id }
 
-# Security
-output "private_sg_id" { value = aws_security_group.private_sg.id }
+output "private_subnet_ids" {
+  description = "A list of the private subnet IDs"
+  value = [
+    for key, config in var.subnet_configs :
+    aws_subnet.main[key].id if config.type == "private"
+  ]
+}
 
-# Compute
-output "asg_name" { value = aws_autoscaling_group.backend_asg.name }
+output "vpc_id" {
+  value       = aws_vpc.backbone.id
+  description = "The ID of the created VPC"
+}
 
-# Load Balancing
-output "alb_dns_name" { value = aws_lb.backend_alb.dns_name }
+output "public_subnet_ids" {
+  description = "A list of the public subnet IDs"
+  value = [
+    for key, config in var.subnet_configs :
+    aws_subnet.main[key].id if config.type == "public"
+  ]
+}
+
