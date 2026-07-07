@@ -59,7 +59,7 @@ _terraform destroy_
 
 
 ### Infrastructure Dependency Graph
-![Dependency Graph](docs/assets/graph.svg)
+![Dependency Graph](docs/assets/aws-vpc-backbone.drawio.svg)
 
 
 
