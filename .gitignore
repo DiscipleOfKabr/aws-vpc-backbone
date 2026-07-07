@@ -1,16 +1,40 @@
-# Local .terraform directories
+# --- Terraform ---
 **/.terraform/*
-
-# .tfstate files (They contain sensitive data and secrets!)
 *.tfstate
 *.tfstate.*
-
-# Crash logs or execution plans
 *.tfplan
 *.log
-
-# Sensitive variable files
 *.tfvars
 *.tfvars.json
 override.tf
 override.tf.json
+*.secret
+*.key
+*.pem
+
+# --- AWS & Credentials ---
+# Never track AWS credential files
+.aws/
+credentials
+config
+
+# --- Sensitive Environment Files ---
+# Ignore local environment variables and secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local.php
+
+# --- OS & IDE Metadata ---
+# Fedora/Linux and IDE specific ignores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*~
+*.swp
+
+# Note: Keep .terraform.lock.hcl in your repository as it 
+# tracks provider versions for team consistency.
